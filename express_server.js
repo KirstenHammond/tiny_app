@@ -70,8 +70,16 @@ app.post('/urls/:id/delete', (req, res) => { //the POST handler for when the del
   res.redirect('/urls');
 });
 
+app.post('/urls/:id', (req, res) => {//POST handler for when the edit button is clicked in urls_show. It takes the longURL submitted and updated the database
+  //console.log(req.body);//testing
+  const editedURL = `http://${req.body.longURL}`;
+  const id = req.params.id;
+  urlDatabase[id] = editedURL;
+  res.redirect('/urls');
+});
+
 //At the bottom so every other route gets filtered through before triggering this render
-app.get("/*" , (req, res) => {
+app.get("/*", (req, res) => {
   res.render('404'); // // where 404 is a file path with ejs view.Currently only working on /
 });
 
