@@ -21,7 +21,7 @@ const randomString = () => {
 app.set("view engine", "ejs"); //setting the EJS view engine to recognise the views folder
 app.use(express.urlencoded({ extended: true })); //MIDDLEWARE converting the server response body from buffer to encoded readable language
 app.use((req, res, next) => { //MIDDLEWARE
-  console.log(`${req.method} ${req.url}`); //for every request, do this
+  console.log(`reqmethod= ${req.method}  requrl= ${req.url}`); //for every request, do this
   next(); //starts a chain of callbacks thatll run with every request
 })
 
@@ -64,6 +64,13 @@ app.get("/urls/:id", (req, res) => { //URL specific page detailing the long and 
   res.render("urls_show", templateVars);
 });
 
+app.post('/urls/:id/delete', (req, res) => { //the POST handler for when the delete button is clicked next to the long URL in /urls
+  const id = req.params.id;
+  delete urlDatabase[id]; //delete keyword to remove item from database, accessed by the key
+  res.redirect('/urls');
+});
+
+//At the bottom so every other route gets filtered through before triggering this render
 app.get("/*" , (req, res) => {
   res.render('404'); // // where 404 is a file path with ejs view.Currently only working on /
 });
@@ -72,16 +79,3 @@ app.get("/*" , (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}!`);
 });
-
-
-/* 
-
-   <!--<a href="/singles/delete/<%= name %> Delete </a>-->
-   <!--<a href="/singles/delete/<%= name %> Edit </a>-->
-At the bottom so every other route gets filtered through before triggering this render
-console log database to see what the database looks like througout requests
-app.get('singles/delete/:name', (req, res) => {
-  const name = req.params.name;
-  delete singles[name];
-  res.redirect('/');
-}) */
