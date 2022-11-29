@@ -9,6 +9,7 @@
 </head>
 
 <body>
+  <%- include('./partials/_header') %>
   <div class="card text-center">
     <div class="card-header"></div>
     <div class="card-body">
@@ -18,9 +19,6 @@
         Short URL ID: <a href="/u/<%= id %>">
           <%= id %>
         </a>
-      </p>
-      <p>
-        <a href="#">Click here to generate a shortened URL</a>
       </p>
     </div>
     <div class="card-footer text-muted"></div>

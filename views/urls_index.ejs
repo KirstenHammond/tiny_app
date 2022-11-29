@@ -13,7 +13,8 @@
   <title>TinyApp</title>
 </head>
 
-<body>
+<body >
+  <%- include('./partials/_header') %>
   <main style="margin: 1em;">
     <h3>My URLs</h3>
     <table class="table">
@@ -37,9 +38,6 @@
           <% } %>
       </tbody>
     </table>
-    <p>
-      <a href="#">Click here to generate a shortened URL</a>
-    </p>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
