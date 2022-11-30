@@ -26,6 +26,12 @@
           
           <th scope="col">Long URL</th>
 
+          <th scope="col">Date Created</th>
+
+          <th sccope="col" id="display">Number of clicks</th>
+
+          <th sccope="col" id="display">Number of unique clicks</th>
+
           <th scope="col">Edit</th>
 
           <th scope="col">Delete</th>
@@ -35,11 +41,21 @@
       <tbody>
         <% for (let id in urls) { %>
           <tr>
-            <td>
+            <td id="link"><a href="/u/<%= id %>">
               <%= id %>
+            </a>
             </td>
             <td>
               <%= urls[id] %>
+            </td>
+            <td>
+              <%= dateCreated %>
+            </td>
+            <td>
+              Clicks tbd
+            </td>
+            <td>
+              Unique clicks tbd
             </td>
             <td>
               <form method="GET" action="/urls/<%=id%>">

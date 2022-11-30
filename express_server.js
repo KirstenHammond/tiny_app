@@ -18,6 +18,7 @@ const randomString = () => {
   })
   return result;
 }
+
 //console.log(randomString());//testing
 
 app.set("view engine", "ejs"); //setting the EJS view engine to recognise the views folder
@@ -40,7 +41,8 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
   //console.log("req.cookies[username]", req.cookies["username"]);///testing
   const templateVars = { 
     urls: urlDatabase,
-    username : req.cookies["username"]  //adding access to the cookie username in the header template
+    username : req.cookies["username"],  //adding access to the cookie username in the header template
+    dateCreated: new Date().toLocaleDateString()///stretch project
   };
   res.render("urls_index", templateVars);
 })
@@ -89,7 +91,8 @@ app.get("/urls/:id", (req, res) => { //URL specific page detailing the long and 
   const templateVars = { 
     id: req.params.id, 
     longURL: urlDatabase[req.params.id],
-    username: req.cookies.username //adding access to the cookie username in the header template
+    username: req.cookies.username, //adding access to the cookie username in the header template
+    dateCreated: new Date().toLocaleDateString()///stretch projet
   };
   if(urlDatabase.hasOwnProperty(templateVars.id)) { //cheking that the id that has been requested exists in the database
   res.render("urls_show", templateVars); //if it does then proceed with rendering urls/show
