@@ -2,8 +2,11 @@
 //Using Express to create a server on port 8080
 
 const express = require("express");
+const cookieParser = require('cookie-parser'); //installed npm install cookie-parser
 const app = express();
 const PORT = 8080; // default port 8080
+
+app.use(cookieParser());//calling the cookie parser function within express()
 
 const randomString = () => {
   result = "";
@@ -34,8 +37,12 @@ const urlDatabase = { //presumably this will be refactored from a database and n
 };
 
 app.get("/urls", (req, res) => { //main table housing historical conversions when signed in
-  console.log(urlDatabase);//logs to server not client side so we can track movements on database
-  const templateVars = { urls: urlDatabase };
+  //console.log(urlDatabase);//logs to server not client side so we can track movements on database
+  //console.log("req.cookies[username]", req.cookies["username"]);
+  const templateVars = { 
+    urls: urlDatabase,
+    username : req.cookies["username"]  //adding access to the cookie username in the header template
+  };
   res.render("urls_index", templateVars);
 })
 
@@ -46,9 +53,24 @@ app.post("/urls", (req, res) => { //POST request for when user submits long url.
   res.redirect(`/urls/${id}`);// eg urls_show = redirect to a page displaying long url and shortened URL as a hyperlink (see below)
 })
 
+app.post("/login", (req, res) => { //event handler for clicking login button with submitted username
+  //console.log("req.body=", req.body.username); //the string that was passed in
+  res.cookie("username", `${req.body.username}`, {encode: String}); //setting a cookie named username to the value of the encoded string passed in
+  res.redirect("/urls"); //redirecting to the home page. Header has conditional to check if a username cookie is truthy
+})
+
+app.post("/logout", (req, res) => {//when username cookie is truthy, a form appears notifying the user of their username and providing an option to sign out
+  //console.log("logout", req.cookies.username);//checking
+  res.clearCookie("username");//upon clicking logout, the cookie called username is cleared
+  res.redirect("/urls");//redirected to home page, now condition is falsey so login option appears
+});
+
 
 app.get("/urls/new", (req, res) => {// creating a new submission. It has a linked POST request.
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies.username //adding access to the cookie username in the header template
+  }
+  res.render("urls_new", templateVars);
 });
 
 
@@ -60,7 +82,11 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { //URL specific page detailing the long and short URL and rendering urls_show
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { 
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies.username //adding access to the cookie username in the header template
+  };
   res.render("urls_show", templateVars);
 });
 
