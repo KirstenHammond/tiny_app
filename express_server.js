@@ -4,10 +4,10 @@
 const express = require("express");
 const cookieParser = require('cookie-parser'); //installed npm install cookie-parser
 const app = express();
+app.use(cookieParser());//calling the cookie parser function within express()
 const PORT = 8080; // default port 8080
 
-app.use(cookieParser());//calling the cookie parser function within express()
-
+//Function to create short URL
 const randomString = () => {
   result = "";
   var options = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -18,8 +18,7 @@ const randomString = () => {
   })
   return result;
 }
-
-//console.log(randomString());
+//console.log(randomString());//testing
 
 app.set("view engine", "ejs"); //setting the EJS view engine to recognise the views folder
 app.use(express.urlencoded({ extended: true })); //MIDDLEWARE converting the server response body from buffer to encoded readable language
@@ -38,7 +37,7 @@ const urlDatabase = { //presumably this will be refactored from a database and n
 
 app.get("/urls", (req, res) => { //main table housing historical conversions when signed in
   //console.log(urlDatabase);//logs to server not client side so we can track movements on database
-  //console.log("req.cookies[username]", req.cookies["username"]);
+  //console.log("req.cookies[username]", req.cookies["username"]);///testing
   const templateVars = { 
     urls: urlDatabase,
     username : req.cookies["username"]  //adding access to the cookie username in the header template
@@ -46,7 +45,7 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
   res.render("urls_index", templateVars);
 })
 
-app.post("/urls", (req, res) => { //POST request for when user submits long url. 
+app.post("/urls", (req, res) => { //POST request for when user submits long url from /urls/new. 
   const id = randomString();//short url generator for each post
   const newEntry = `http://${req.body.longURL}`;//making the format readable when redirecting
   urlDatabase[id] = newEntry; //adding the new short url and provided long url to database
@@ -54,7 +53,7 @@ app.post("/urls", (req, res) => { //POST request for when user submits long url.
 })
 
 app.post("/login", (req, res) => { //event handler for clicking login button with submitted username
-  //console.log("req.body=", req.body.username); //the string that was passed in
+  //console.log("req.body=", req.body.username); //testing. the string that was passed in
   res.cookie("username", `${req.body.username}`, {encode: String}); //setting a cookie named username to the value of the encoded string passed in
   res.redirect("/urls"); //redirecting to the home page. Header has conditional to check if a username cookie is truthy
 })
@@ -74,11 +73,16 @@ app.get("/urls/new", (req, res) => {// creating a new submission. It has a linke
 });
 
 
-
 app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
   const longURL = urlDatabase[req.params.id];//getting the longURL from the post above as it has been saved to the database
   //console.log(longURL); testing
+  if (urlDatabase.hasOwnProperty(id)) {//checking if id is truthy in urlDatabase.
   return res.redirect(longURL);//when u/shortURL is visited, it redirects to the long URL
+  }
+  else {
+    res.render('404');
+  }
 });
 
 app.get("/urls/:id", (req, res) => { //URL specific page detailing the long and short URL and rendering urls_show
@@ -87,7 +91,12 @@ app.get("/urls/:id", (req, res) => { //URL specific page detailing the long and 
     longURL: urlDatabase[req.params.id],
     username: req.cookies.username //adding access to the cookie username in the header template
   };
-  res.render("urls_show", templateVars);
+  if(urlDatabase.hasOwnProperty(templateVars.id)) { //cheking that the id that has been requested exists in the database
+  res.render("urls_show", templateVars); //if it does then proceed with rendering urls/show
+  }
+  else {
+    res.render('404');
+  }
 });
 
 app.post('/urls/:id/delete', (req, res) => { //the POST handler for when the delete button is clicked next to the long URL in /urls
