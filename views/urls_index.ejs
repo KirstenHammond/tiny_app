@@ -39,14 +39,14 @@
         </tr>
       </thead>
       <tbody>
-        <% for (let id in urls) { %>
+        <% for (let shortURL in urls) { %>
           <tr>
-            <td id="link"><a href="/u/<%= id %>">
-              <%= id %>
+            <td id="link"><a href="/u/<%=shortURL %>">
+              <%= shortURL %>
             </a>
             </td>
             <td>
-              <%= urls[id] %>
+              <%= urls[shortURL] %>
             </td>
             <td>
               <%= dateCreated %>
@@ -58,12 +58,12 @@
               Unique clicks tbd
             </td>
             <td>
-              <form method="GET" action="/urls/<%=id%>">
+              <form method="GET" action="/urls/<%=shortURL%>">
                  <button type="submit" class="btn btn-primary">Edit</button>
               </form>
             </td>
             <td>
-              <form method ="POST" action="/urls/<%=id%>/delete" >
+              <form method ="POST" action="/urls/<%=shortURL%>/delete" >
                 <button type="submit" class="btn btn-secondary">Delete</button>
               </form>
             </td>
