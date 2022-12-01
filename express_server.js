@@ -6,7 +6,8 @@
 //SETUP
 
 const express = require("express");
-const cookieParser = require('cookie-parser'); //installed npm install cookie-parser
+//const cookieParser = require('cookie-parser'); //installed npm install cookie-parser
+const cookieSession = require('cookie-session');
 const app = express();
 app.set("view engine", "ejs"); //setting the EJS view engine to recognise the views folder
 const bcrypt = require("bcryptjs"); //password encryption
@@ -15,7 +16,11 @@ const PORT = 8080; // default port 8080
 //-----------------------------------------------------------------------------------------------------------------------------
 //MIDDLEWARE
 
-app.use(cookieParser());//calling the cookie parser function within express()
+//app.use(cookieParser());//calling the cookie parser function within express()
+app.use(cookieSession({
+  name: "encryptCookie",
+  keys: ['notSecret', 'notSecret2']
+}));
 app.use(express.urlencoded({ extended: true })); //MIDDLEWARE converting the server response body from buffer to encoded readable language
 app.use((req, res, next) => { //MIDDLEWARE
   console.log(`reqmethod= ${req.method}  requrl= ${req.url}`); //for every request, do this
@@ -41,7 +46,7 @@ const getUserByEmail = emailProvided => {
   for (let existingID in users) {
     if (users[existingID].email === emailProvided) {
       return users[existingID];
-    } 
+    }
   }
   return null;
 }
@@ -98,7 +103,7 @@ const users = {
     email: "k@k.com",
     password: bcrypt.hashSync("123", 10)
   },
-  abcd : {
+  abcd: {
     id: "abcd",
     email: "n@n.com",
     password: bcrypt.hashSync("567", 10)
@@ -112,8 +117,10 @@ const users = {
 //GET (URL)
 // Root Dir--------------------------------------------------------------------------------------------------------------
 app.get("/", (req, res) => {
-  const user_id = req.cookies["user_id"];
-  const loginStatus = isLoggedIn(user_id);
+  //const user_id = req.cookies["user_id"];
+
+  req.session.encryptCookie
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   if (!loginStatus) {
     res.redirect("/login");
   } else {
@@ -125,19 +132,19 @@ app.get("/", (req, res) => {
 //Main Page----------------------------------------------------------------------------------------------------
 app.get("/urls", (req, res) => { //main table housing historical conversions when signed in
   //console.log(users);//logs to server not client side so we can track movements on databases
-  const user_id = req.cookies["user_id"];
+  //const user_id = req.cookies["user_id"];
 
-  const loginStatus = isLoggedIn(user_id);
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   if (!loginStatus) {
     res.send("<p> Please login or register to view your URLS</p>");
   } else {
     let userObject = {};
     for (let existingID in users) {
-      if (existingID === user_id) {
+      if (existingID === req.session.encryptCookie) {
         userObject = users[existingID];
       }
     }
-    let filteredURLS = urlsForUser(user_id);
+    let filteredURLS = urlsForUser(req.session.encryptCookie);
     //console.log("filteredURLS", filteredURLS);
     const templateVars = {
       userObject,  //adding access to the cookie user_id in the header template
@@ -152,9 +159,9 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
 
 //New URL shortener-----------------------------------------------------------------------------------------
 app.get("/urls/new", (req, res) => {// creating a new submission. It has a linked POST request.
-  const user_id = req.cookies["user_id"];
+  //const user_id = req.cookies["user_id"];
 
-  const loginStatus = isLoggedIn(user_id);
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   console.log("loginStatus", loginStatus);
 
   if (!loginStatus) {
@@ -162,7 +169,7 @@ app.get("/urls/new", (req, res) => {// creating a new submission. It has a linke
   } else {
     let userObject = {};
     for (let existingID in users) {
-      if (existingID === user_id) {
+      if (existingID === req.session.encryptCookie) {
         userObject = users[existingID];
       }
     }
@@ -177,11 +184,11 @@ app.get("/urls/new", (req, res) => {// creating a new submission. It has a linke
 //Edit/show each short URL------------------------------------------------------------------------------------------------------
 app.get("/urls/:shortURL", (req, res) => { //URL specific page detailing the long and short URL and rendering urls_show
   //console.log("urlDatabase before show", urlDatabase);
-  const user_id = req.cookies["user_id"];
+  //const user_id = req.cookies["user_id"];
   const shortURLRequested = req.params.shortURL;
-  const loginStatus = isLoggedIn(user_id);
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   //console.log("loginStatus", loginStatus);
-  let filteredURLS = urlsForUser(user_id);
+  let filteredURLS = urlsForUser(req.session.encryptCookie);
   //console.log("filteredURLS", filteredURLS);
   if (!urlDatabase[shortURLRequested]) {
     res.send("<p>That URL does not exist on our database</p>")
@@ -192,7 +199,7 @@ app.get("/urls/:shortURL", (req, res) => { //URL specific page detailing the lon
   } else {
     let userObject = {};
     for (let existingID in users) {
-      if (existingID === user_id) {
+      if (existingID === req.session.encryptCookie) {
         userObject = users[existingID];
       }
     }
@@ -225,17 +232,17 @@ app.get("/u/:shortURL", (req, res) => {
 
 //POST New URL-----------------------------------------------------------------------------------------------------------------
 app.post("/urls", (req, res) => { //POST request for when user submits long url from /urls/new and returns to homepage. 
-  const user_id = req.cookies["user_id"];
-  const loginStatus = isLoggedIn(user_id);
-  console.log("loginStatus", loginStatus);
-  console.log("req.body", req.body);
+ // const user_id = req.cookies["user_id"];
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
+  //console.log("loginStatus", loginStatus);
+  //console.log("req.body", req.body);
 
   if (!loginStatus) {
     res.redirect("404");//if logged out and accessing path via curl, redirect. Safety issue.
   } else {
     const shortURL = randomString();//short url generator for each post
     const longURL = `http://${req.body.longURL}`;//making the format readable when redirecting
-    urlDatabase[shortURL] = { longURL, userID: user_id }; //adding the new short url and provided long url to database
+    urlDatabase[shortURL] = { longURL, userID: req.session.encryptCookie }; //adding the new short url and provided long url to database
     res.redirect(`/urls/${shortURL}`);// eg urls_show = redirect to a page displaying long url and shortened URL as a hyperlink (see below)
 
   }
@@ -255,11 +262,11 @@ app.post('/urls/:shortURL', (req, res) => {//POST handler for when the edit butt
 
 //Delete----------------------------------------------------------------------------------------------------------------------------------------
 app.post('/urls/:shortURL/delete', (req, res) => { //the POST handler for when the delete button is clicked next to the long URL in /urls
-  const user_id = req.cookies["user_id"];
-  const loginStatus = isLoggedIn(user_id);
+  //const user_id = req.cookies["user_id"];
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   const shortURLRequested = req.params.shortURL;
   console.log("short url", shortURLRequested);
-  let filteredURLS = urlsForUser(user_id);
+  let filteredURLS = urlsForUser(req.session.encryptCookie);
 
   if (!urlDatabase[shortURLRequested]) {
     res.send("<p>That URL does not exist on our database</p>")
@@ -277,9 +284,10 @@ app.post('/urls/:shortURL/delete', (req, res) => { //the POST handler for when t
 
 //GET Login---------------------------------------------------------------------------------------------------------
 app.get("/login", (req, res) => {
-  const user_id = req.cookies["user_id"];
+  console.log("reqsessioncookie", req.session.encryptCookie);
 
-  const loginStatus = isLoggedIn(user_id); //boolean value- true if logged in, false if not.
+
+  const loginStatus = isLoggedIn(req.session.encryptCookie); //boolean value- true if logged in, false if not.
   //console.log("loginStatus", loginStatus);
 
   if (loginStatus) {
@@ -287,7 +295,7 @@ app.get("/login", (req, res) => {
   } else { //if not already logged in, then render the login page
     let userObject = {};
     for (let existingID in users) {
-      if (existingID === user_id) {
+      if (existingID === req.session.encryptCookie) {
         userObject = users[existingID];
       }
     }
@@ -302,9 +310,9 @@ app.get("/login", (req, res) => {
 
 //Get Register-------------------------------------------------------------------------------------------------------------------------------
 app.get("/register", (req, res) => { //rendering for /register page where users submit their email and password to create a new user
-  const user_id = req.cookies["user_id"];
+  console.log("reqsessioncookie", req.session.encryptCookie);
 
-  const loginStatus = isLoggedIn(user_id);
+  const loginStatus = isLoggedIn(req.session.encryptCookie);
   //console.log("loginStatus", loginStatus);
 
   if (loginStatus) {
@@ -312,7 +320,7 @@ app.get("/register", (req, res) => { //rendering for /register page where users 
   } else {
     let userObject = {};
     for (let existingID in users) {
-      if (existingID === user_id) {
+      if (existingID === req.session.encryptCookie) {
         userObject = users[existingID];
       }
     }
@@ -335,13 +343,14 @@ app.post("/login", (req, res) => {
   }
   //2. If the email does not exists 
   let userObjectLogin = getUserByEmail(loginEmail);
-  if(!userObjectLogin){
+  if (!userObjectLogin) {
     res.send("<p>We dont have that email registered on our database. Please register</p>")
   } else { //Check the password 
     //Email is found and now we are checking for the Password 
     let doPasswordsMatchDatabase = bcrypt.compareSync(loginPassword, userObjectLogin.password);
-    if (doPasswordsMatchDatabase ) {
-      res.cookie("user_id", userObjectLogin.id, { encode: String });
+    if (doPasswordsMatchDatabase) {
+      req.session.encryptCookie = (userObjectLogin.id);
+      //console.log("req session user_id", req.session.encryptCookie);
       res.redirect('/urls');
     } else {
       res.send("<p>That password doesnt match our database for the email provided.</p>")
@@ -362,20 +371,21 @@ app.post("/register", (req, res) => {//event handler for submissions of email an
   let registerUserObject = getUserByEmail(registerEmail);//returning an object that matches the ID, if it exists
   if (registerUserObject === null && (registerPassword !== "" || registerEmail !== "")) {//if the user isnt already in the database and on the condition that the fields arent empty
     users[id] = { id, email: registerEmail, password: hashedRegisterPassword }; //add the user to the user database
-    res.cookie("user_id", `${id}`, { encode: String });
+    req.session.encryptCookie = id;
     res.redirect('/urls');
   } else {
     res.send("<p>Please enter a valid email and password to register</p>");
   }
   //console.log("registerUserObject", registerUserObject); //checking the value of the id object, if it doesnt exists = null
-  console.log("users database reg", users); //checking they havent been added on twice
+  //console.log("users database reg", users); //checking they havent been added on twice
+  //req.session.encryptCookie;
 });
 
 
 //Logout---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 app.post("/logout", (req, res) => {//when user_id cookie is truthy
   //console.log("logout", req.cookies.user_id);//checking
-  res.clearCookie("user_id");//upon clicking logout, the cookie called user_id is cleared
+  req.session = null;//upon clicking logout, the cookie called user_id is cleared
   res.redirect("/login");//redirected to home page, now condition is falsey so login option appears
 });
 
@@ -402,11 +412,8 @@ app.listen(PORT, () => {
 Encrypt cookie
 remove cookie parser
 npm i cookie-session
-const cookieSession = require('cookie-session);
-app.use(cookieSession({
-  name: "user_id", 
-  keys :['notSecret', 'notSecret2']
-}))
+
+
 cookiename = req.body.user_id?
 req.session.cookiename = random string or username or email to be converted;
 
