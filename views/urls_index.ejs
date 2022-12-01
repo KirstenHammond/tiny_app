@@ -39,14 +39,14 @@
         </tr>
       </thead>
       <tbody>
-        <% for (let shortURL in urls) { %>
+        <% for (let shortURL in filteredURLS) { %>
           <tr>
             <td id="link"><a href="/u/<%=shortURL %>">
               <%= shortURL %>
             </a>
             </td>
             <td>
-              <%= urls[shortURL] %>
+              <%= filteredURLS[shortURL].longURL %>
             </td>
             <td>
               <%= dateCreated %>
@@ -68,7 +68,6 @@
               </form>
             </td>
           </tr>
-
           <% } %>
       </tbody>
     </table>
