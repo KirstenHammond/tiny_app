@@ -27,7 +27,7 @@ const randomString = () => {
   return result;
 }
 
-const getUserByEmail = (emailProvided) => {
+const getUserByEmail = emailProvided => {
   let userObjectByEmail = {};
   for (let existingIDs in users) {
     //console.log("users[existingIDs].email", users[existingIDs].email);
@@ -39,6 +39,22 @@ const getUserByEmail = (emailProvided) => {
     }
   }
   return userObjectByEmail;
+}
+
+const isLoggedIn = cookie => { //for determing logged in status when logged in and attempting to access login or register page
+  if (cookie) {
+    return true;
+  } return false;
+}
+
+const urlsForUser = user_id => {
+let filteredURLS = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === user_id) {
+     filteredURLS[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return filteredURLS;
 }
 //-----------------------------------------------------------------------------------------------------------------------------
 //MIDDLEWARE
@@ -56,24 +72,37 @@ app.use((req, res, next) => { //MIDDLEWARE
 
 //URL Database
 const urlDatabase = { //presumably this will be refactored from a database and not hard coded
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "5we8aY": "http://www.guardian.co.uk"
-};
-
-
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "12345"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "12345"
+  },
+  "5we8aY": {
+    longURL: "http://www.guardian.co.uk",
+    userID: "67890"
+  },
+  "s8Q3Ho": {
+    longURL: "http://www.facebook.com",
+    userID: "67890"
+  }
+}
+const unfilteredDatabase = urlDatabase;
 //User Database
 const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+  "67890": {
+    id: "67890",
+    email: "k@k.com",
+    password: "123",
   },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
+  "12345": {
+    id: "12345",
+    email: "l@l.com",
+    password: "123"
+  }
+  
 };
 
 //------------------------------------------------------------------------------------------------------------------
@@ -84,19 +113,28 @@ const users = {
 app.get("/urls", (req, res) => { //main table housing historical conversions when signed in
   //console.log(users);//logs to server not client side so we can track movements on databases
   const user_id = req.cookies["user_id"];
-  let userObject = {};
-  for (let existingID in users) {
-    if (existingID === user_id) {
-      userObject = users[existingID];
+
+  const loginStatus = isLoggedIn(user_id);
+  if (!loginStatus) {
+    res.send("<p> Please login or register to view your URLS</p>");
+  } else {
+    let userObject = {};
+    for (let existingID in users) {
+      if (existingID === user_id) {
+        userObject = users[existingID];
+      }
     }
+    let filteredURLS = urlsForUser(user_id);
+    console.log("filteredURLS", filteredURLS);
+    const templateVars = {
+      userObject,  //adding access to the cookie user_id in the header template
+      filteredURLS,
+      dateCreated: new Date().toLocaleDateString()///stretch project
+    };
+    res.render("urls_index", templateVars);
   }
-  const templateVars = {
-    userObject,  //adding access to the cookie user_id in the header template
-    urls: urlDatabase,
-    dateCreated: new Date().toLocaleDateString()///stretch project
-  };
-  res.render("urls_index", templateVars);
-})
+  console.log("urldatabase", urlDatabase);
+});
 
 
 //Login
@@ -104,29 +142,37 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
 //GET Login
 app.get("/login", (req, res) => {
   const user_id = req.cookies["user_id"];
-  let userObject = {};
-  for (let existingID in users) {
-    if (existingID === user_id) {
-      userObject = users[existingID];
+
+  const loginStatus = isLoggedIn(user_id); //boolean value- true if logged in, false if not.
+  //console.log("loginStatus", loginStatus);
+
+  if (loginStatus) {
+    res.redirect("/urls")
+  } else { //if not already logged in, then render the login page
+    let userObject = {};
+    for (let existingID in users) {
+      if (existingID === user_id) {
+        userObject = users[existingID];
+      }
     }
+    const templateVars = {
+      userObject //adding access to the cookie user_id in the header template
+    }
+    res.render("login", templateVars);
   }
-  const templateVars = {
-    userObject //adding access to the cookie user_id in the header template
-  }
-  res.render("login", templateVars);
+
 });
 
 
 //POST login
 app.post("/login", (req, res) => {
-  console.log("req.body", req.body);
-  
-  //const loginId = randomString(); //using the same shortURL helper function
+  //console.log("req.body", req.body);
+
   const loginEmail = req.body.email;
   const loginPassword = req.body.password;
 
   let userObjectLogin = getUserByEmail(loginEmail);
-  console.log("userobjectlogin", userObjectLogin);
+  //console.log("userobjectlogin", userObjectLogin);
 
   if (userObjectLogin && (userObjectLogin.password === loginPassword)) {
     res.cookie("user_id", userObjectLogin.id, { encode: String });
@@ -147,16 +193,24 @@ app.post("/logout", (req, res) => {//when user_id cookie is truthy
 //Register. Adds to users database
 app.get("/register", (req, res) => { //rendering for /register page where users submit their email and password to create a new user
   const user_id = req.cookies["user_id"];
-  let userObject = {};
-  for (let existingID in users) {
-    if (existingID === user_id) {
-      userObject = users[existingID];
+
+  const loginStatus = isLoggedIn(user_id);
+  //console.log("loginStatus", loginStatus);
+
+  if (loginStatus) {
+    res.redirect("/urls")
+  } else {
+    let userObject = {};
+    for (let existingID in users) {
+      if (existingID === user_id) {
+        userObject = users[existingID];
+      }
     }
+    const templateVars = {
+      userObject //adding access to the cookie user_id in the header template
+    }
+    res.render("register", templateVars);
   }
-  const templateVars = {
-    userObject //adding access to the cookie user_id in the header template
-  }
-  res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {//event handler for submissions of email and password- adds them to the users database
@@ -180,66 +234,92 @@ app.post("/register", (req, res) => {//event handler for submissions of email an
 //New URL shortener
 app.get("/urls/new", (req, res) => {// creating a new submission. It has a linked POST request.
   const user_id = req.cookies["user_id"];
-  let userObject = {};
-  for (let existingID in users) {
-    if (existingID === user_id) {
-      userObject = users[existingID];
+
+  const loginStatus = isLoggedIn(user_id);
+  console.log("loginStatus", loginStatus);
+
+  if (!loginStatus) {
+    res.redirect("/login")
+  } else {
+    let userObject = {};
+    for (let existingID in users) {
+      if (existingID === user_id) {
+        userObject = users[existingID];
+      }
     }
+    const templateVars = {
+      userObject //adding access to the cookie user_id in the header template
+    }
+    res.render("urls_new", templateVars);
   }
-  const templateVars = {
-    userObject //adding access to the cookie user_id in the header template
-  }
-  res.render("urls_new", templateVars);
 });
 
-app.post("/urls", (req, res) => { //POST request for when user submits long url from /urls/new. 
-  const shortURL = randomString();//short url generator for each post
-  const newEntry = `http://${req.body.longURL}`;//making the format readable when redirecting
-  urlDatabase[shortURL] = newEntry; //adding the new short url and provided long url to database
-  res.redirect(`/urls/${shortURL}`);// eg urls_show = redirect to a page displaying long url and shortened URL as a hyperlink (see below)
-})
+app.post("/urls", (req, res) => { //POST request for when user submits long url from /urls/new and returns to homepage. 
+  const user_id = req.cookies["user_id"];
+  const loginStatus = isLoggedIn(user_id);
+  console.log("loginStatus", loginStatus);
+  console.log("req.body", req.body);
 
-//Redirect to long URL
-app.get("/u/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];//getting the longURL from the post above as it has been saved to the database
-  if (urlDatabase.hasOwnProperty(shortURL)) {//checking if shortURL is truthy in urlDatabase.
-    return res.redirect(longURL);//when u/shortURL is visited, it redirects to the long URL
+  if (!loginStatus) {
+    res.redirect("404");//if logged out and accessing path via curl, redirect. Safety issue.
+  } else {
+    const shortURL = randomString();//short url generator for each post
+    const longURL = `http://${req.body.longURL}`;//making the format readable when redirecting
+    urlDatabase[shortURL] = { longURL, userID: user_id }; //adding the new short url and provided long url to database
+    res.redirect(`/urls/${shortURL}`);// eg urls_show = redirect to a page displaying long url and shortened URL as a hyperlink (see below)
+
   }
-  else {
-    res.render('404');
+  //console.log("url database after new database changes", urlDatabase);
+});
+
+//Redirect to long URL whether signed in or not
+app.get("/u/:shortURL", (req, res) => {
+  //console.log("urlDatabase on longurl click", urlDatabase);
+  const shortURLRequested = req.params.shortURL;
+  if(urlDatabase[shortURLRequested]) { //if the short URL exists in our full database
+    let redirLongURL = urlDatabase[shortURLRequested].longURL; //getting the longURL from the post above as it has been saved to the database
+    res.redirect(redirLongURL);//when u/shortURL is visited, it redirects to the long URL
+  } else {
+    res.send("<p>That short URL doesnt exist in our database</p>")
   }
 });
 
 
 //Edit/show each short URL
 app.get("/urls/:shortURL", (req, res) => { //URL specific page detailing the long and short URL and rendering urls_show
-
+  //console.log("urlDatabase before show", urlDatabase);
   const user_id = req.cookies["user_id"];
-  let userObject = {};
-  for (let existingID in users) {
-    if (existingID === user_id) {
-      userObject = users[existingID];
+  const shortURLRequested = req.params.shortURL;
+  const loginStatus = isLoggedIn(user_id);
+  //console.log("loginStatus", loginStatus);
+  let filteredURLS = urlsForUser(user_id);
+  console.log("filteredURLS", filteredURLS);
+  if (!loginStatus) {
+    res.send("<p>Please login to show individual URL pages</p>")
+  } else if (!filteredURLS[shortURLRequested]) {
+    res.send("<p>You dont have authorisation to show this URL</p>")
+  } else {
+    let userObject = {};
+    for (let existingID in users) {
+      if (existingID === user_id) {
+        userObject = users[existingID];
+      }
     }
-  }
-  const templateVars = {
-    userObject, //adding access to the cookie user_id in the header template
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    dateCreated: new Date().toLocaleDateString()///stretch projet
-  };
-  if (urlDatabase.hasOwnProperty(templateVars.shortURL)) { //cheking that the id that has been requested exists in the database
+    const templateVars = {
+      userObject, //adding access to the cookie user_id in the header template
+      longURL: filteredURLS[shortURLRequested].longURL,
+      shortURLRequested,
+      dateCreated: new Date().toLocaleDateString()///stretch projet
+    };
     res.render("urls_show", templateVars); //if it does then proceed with rendering urls/show
   }
-  else {
-    res.render('404');
-  }
+  console.log("urlDatabase after show", urlDatabase);
 });
 
 app.post('/urls/:shortURL', (req, res) => {//POST handler for when the edit button is clicked in urls_show. It takes the longURL submitted and updated the database
   const editedURL = `http://${req.body.longURL}`;
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = editedURL;//updating the database with the new submission
+  urlDatabase[shortURL].longURL = editedURL;//updating the database with the new submission
   res.redirect('/urls');
 });
 
@@ -257,6 +337,7 @@ app.post('/urls/:shortURL/delete', (req, res) => { //the POST handler for when t
 //------------------------------------------------------------------------------------------------------------------
 //ERROR HANDLING
 //At the bottom so every other route gets filtered through before triggering this render
+
 app.get("/*", (req, res) => {
   res.render('404'); // // where 404 is a file path with ejs view.Currently only working on /
 });
