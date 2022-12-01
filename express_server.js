@@ -9,6 +9,7 @@ const express = require("express");
 const cookieParser = require('cookie-parser'); //installed npm install cookie-parser
 const app = express();
 app.set("view engine", "ejs"); //setting the EJS view engine to recognise the views folder
+const bcrypt = require("bcryptjs"); //password encryption
 const PORT = 8080; // default port 8080
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -37,17 +38,12 @@ const randomString = () => {
 }
 
 const getUserByEmail = emailProvided => {
-  let userObjectByEmail = {};
-  for (let existingIDs in users) {
-    //console.log("users[existingIDs].email", users[existingIDs].email);
-    if (users[existingIDs].email === emailProvided) {
-      //console.log("users[existingIDs]", users[existingIDs]);
-      userObjectByEmail = users[existingIDs];
-    } else {
-      userObjectByEmail = null;
-    }
+  for (let existingID in users) {
+    if (users[existingID].email === emailProvided) {
+      return users[existingID];
+    } 
   }
-  return userObjectByEmail;
+  return null;
 }
 
 const isLoggedIn = cookie => { //for determing logged in status when logged in and attempting to access login or register page
@@ -89,20 +85,24 @@ const urlDatabase = { //presumably this will be refactored from a database and n
     userID: "67890"
   }
 }
-const unfilteredDatabase = urlDatabase;
+
 //User Database
 const users = {
+  "12345": {
+    id: "12345",
+    email: "m@m.com",
+    password: bcrypt.hashSync("123", 10)
+  },
   "67890": {
     id: "67890",
     email: "k@k.com",
-    password: "123",
+    password: bcrypt.hashSync("123", 10)
   },
-  "12345": {
-    id: "12345",
-    email: "l@l.com",
-    password: "123"
+  abcd : {
+    id: "abcd",
+    email: "n@n.com",
+    password: bcrypt.hashSync("567", 10)
   }
-
 };
 
 //------------------------------------------------------------------------------------------------------------------
@@ -116,9 +116,9 @@ app.get("/", (req, res) => {
   const loginStatus = isLoggedIn(user_id);
   if (!loginStatus) {
     res.redirect("/login");
-  } 
+  } else {
     res.redirect("/urls")
-
+  }
 });
 
 
@@ -138,7 +138,7 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
       }
     }
     let filteredURLS = urlsForUser(user_id);
-    console.log("filteredURLS", filteredURLS);
+    //console.log("filteredURLS", filteredURLS);
     const templateVars = {
       userObject,  //adding access to the cookie user_id in the header template
       filteredURLS,
@@ -146,7 +146,7 @@ app.get("/urls", (req, res) => { //main table housing historical conversions whe
     };
     res.render("urls_index", templateVars);
   }
-  console.log("urldatabase", urlDatabase);
+  //console.log("urldatabase", urlDatabase);
 });
 
 
@@ -327,38 +327,48 @@ app.get("/register", (req, res) => { //rendering for /register page where users 
 
 //Post login details-----------------------------------------------------------------------------------------------------------------------------------
 app.post("/login", (req, res) => {
-  //console.log("req.body", req.body);
-
   const loginEmail = req.body.email;
   const loginPassword = req.body.password;
-
-  let userObjectLogin = getUserByEmail(loginEmail);
-  //console.log("userobjectlogin", userObjectLogin);
-
-  if (userObjectLogin && (userObjectLogin.password === loginPassword)) {
-    res.cookie("user_id", userObjectLogin.id, { encode: String });
-    res.redirect('urls');
-  } else {
-    res.sendStatus(403)
+  //1. First check of whether the email or password is there
+  if (loginPassword === "" || loginEmail === "") {
+    res.send("<p>Cannot login with empty email and password fields</p>")
   }
+  //2. If the email does not exists 
+  let userObjectLogin = getUserByEmail(loginEmail);
+  if(!userObjectLogin){
+    res.send("<p>We dont have that email registered on our database. Please register</p>")
+  } else { //Check the password 
+    //Email is found and now we are checking for the Password 
+    let doPasswordsMatchDatabase = bcrypt.compareSync(loginPassword, userObjectLogin.password);
+    if (doPasswordsMatchDatabase ) {
+      res.cookie("user_id", userObjectLogin.id, { encode: String });
+      res.redirect('/urls');
+    } else {
+      res.send("<p>That password doesnt match our database for the email provided.</p>")
+    }
+  }
+  console.log("users database login", users);
 });
 
 //POST register details------------------------------------------------------------------------------------------------------------
 app.post("/register", (req, res) => {//event handler for submissions of email and password- adds them to the users database
   const id = randomString(); //using the same shortURL helper function
-  const email = req.body.email;
-  const password = req.body.password;
+  const registerEmail = req.body.email;
+  const registerPassword = req.body.password;
 
-  let registerUserObject = getUserByEmail(email);//returning an object that matches the ID, if it exists
-  if (registerUserObject === null && (password !== "" || email !== "")) {//if the user isnt already in the database and on the condition that the fields arent empty
-    users[id] = { id, email, password }; //add the user to the user database
+  const hashedRegisterPassword = bcrypt.hashSync(registerPassword, 10);
+  //console.log("hashedregisterpassword", hashedRegisterPassword);
+
+  let registerUserObject = getUserByEmail(registerEmail);//returning an object that matches the ID, if it exists
+  if (registerUserObject === null && (registerPassword !== "" || registerEmail !== "")) {//if the user isnt already in the database and on the condition that the fields arent empty
+    users[id] = { id, email: registerEmail, password: hashedRegisterPassword }; //add the user to the user database
     res.cookie("user_id", `${id}`, { encode: String });
     res.redirect('/urls');
   } else {
-    res.sendStatus(400);
+    res.send("<p>Please enter a valid email and password to register</p>");
   }
   //console.log("registerUserObject", registerUserObject); //checking the value of the id object, if it doesnt exists = null
-  //console.log("users database reg", users); //checking they havent been added on twice
+  console.log("users database reg", users); //checking they havent been added on twice
 });
 
 
@@ -386,3 +396,62 @@ app.get("/*", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}!`);
 });
+
+
+/* 
+Encrypt cookie
+remove cookie parser
+npm i cookie-session
+const cookieSession = require('cookie-session);
+app.use(cookieSession({
+  name: "user_id", 
+  keys :['notSecret', 'notSecret2']
+}))
+cookiename = req.body.user_id?
+req.session.cookiename = random string or username or email to be converted;
+
+change to req.session.cookiename where checking cookies
+
+In logout:
+req.session = null to delete cookies
+
+HTTPS
+get certifciate from host server. not needed for tiny app
+
+REST 
+
+For Stretch
+method override- middleware
+
+npm i method-override
+const methodOverride = require("method-override")
+app.use(methodOverride('_method'));
+
+eg
+from 
+app.post("/register", (req, res))
+to
+app.patch("/register", (req, res))
+
+In form add query string on end
+html -- method="POST"  action="/register?_method=PATCH">
+
+
+Modular routing
+new folder called routes
+move "profile" route into new files within routes
+then require in express into the new file
+
+const router = express.Router()
+then change app.get
+to router.get("/", (res req)
+
+module.exports = router; at the bottom so it can be exported to other files
+
+then in express:
+//In place where "profile" route was removed
+const profileRouter = require("./routes/profile")
+
+app.use(CHECK?)(/profile', profileRouter)
+
+*/
