@@ -43,3 +43,5 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 This project was completed in 4 days during the @lighthouse-labs [Web Development Bootcamp](https://www.lighthouselabs.ca/en/web-development-bootcamp).
 
+#### Please Note
+Cookies need to be cleared if resetting the local server.
