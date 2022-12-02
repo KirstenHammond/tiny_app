@@ -1,20 +1,5 @@
-To Do:
-Remove helper functions into seperate file- export/import
-Remove databases into seperate file
-Improve 404 page
-Confirm 403 and 402 messages vs HTML
-delete console logs
-refactor -
-  ternary statements
-  switch instead of else ifs
-  global for user_id, log in status etc
-  try catch?
-
-stretch - 
-  login register not in a row
-  user click counter
-  unique click counter
-
+Todo
+chai tests
 readme
 intro. version of bit.ly 
 contents page with links to files and brief descriptions
@@ -29,7 +14,8 @@ views-
   show
 
 tech stack
-express, bcrypt, cookieparser, ejs, javscript, html, bootstrap, 
+express, bcrypt, cookiesession, ejs, javscript, html, bootstrap, 
+dev dep mocha chai testing, nodemon
 
 intended use eg learning exercise
 
