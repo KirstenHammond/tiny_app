@@ -2,13 +2,15 @@
 
 TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly).
 
+---
 ## Final Product
 
-!["Users Homepage when logged in"](https://github.com/KirstenHammond/tiny_app/blob/main/docs/TinyApp_Login.png?raw=true)
-!["Creating a New TinyURL"](https://github.com/KirstenHammond/tiny_app/blob/main/docs/TinyApp_newtinyURL.png?raw=true)
-!["Editing an existing TinyURL"](https://github.com/KirstenHammond/tiny_app/blob/main/docs/TinyApp_editURL.png?raw=true)
-!["Logging in"](https://github.com/KirstenHammond/tiny_app/blob/main/docs/TinyApp_Login.png?raw=true)
+![Users Homepage when logged in](./docs/TinyApp_homePage.png)
+![Editing an existing TinyURL](./docs/TinyApp_editURL.png)
+![Creating a New TinyURL](./docs/TinyApp_newtinyURL.png)
+![Logging in](./docs/TinyApp_Login.png)
 
+---
 ## Dependencies
 
 - Node.js
@@ -21,21 +23,23 @@ TinyApp is a full stack web application built with Node and Express that allows 
 ### Helpful extras
 - Mocha/Chai for unit testing
 - nodemon for automatic server restarts
-
+---
 ### Contents
-1. [Mocha/Chai Unit Testing](/test)
+1. [Express Server aka where the magic happens](/express_server.js)
 2. [View pages for EJS rendering](/views)
-  
-3. [Databases for URLs and Users](/database.js)
-4. [Express Server aka where the magic happens](/express_server.js)
-5. [Helper functions](/helperFunctions.js)
-
-
+3. [Helper functions](/helperFunctions.js)
+4. [Databases for URLs and Users](/database.js)
+5. [Mocha/Chai Unit Testing](/test)
+    
+---
 ### Getting Started
 
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `node express_server.js` command.
-
+- Register an account, create new submissions for TinyURLs
+- Manage TinyURLS, edit or delete as needed
+---
 #### Acknowledgements
-This project was completed in 4 days during the @lighthouselabs Web Development Bootcamp.
+
+This project was completed in 4 days during the @lighthouse-labs [Web Development Bootcamp](https://www.lighthouselabs.ca/en/web-development-bootcamp).
 
