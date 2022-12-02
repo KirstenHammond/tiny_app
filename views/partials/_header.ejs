@@ -1,4 +1,4 @@
-<!-- Header to be included in urls_index and urls_show-->
+<!-- Header to be included in all view pages-->
 <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
     <a class="navbar-brand" href="/urls">TinyApp</a>
@@ -16,7 +16,7 @@
       <% if(userObject.id) { %>
         <form method="POST" action="/logout">
           <label>Logged in as: <%=userObject.email%>!</label>
-          <button type="submit" class="btn btn-primary">Logout</button>
+          <button type="submit" class="btn btn-outline-dark">Logout</button>
         </form>
         <% } else { %>
           <div class="navbar-nav">
