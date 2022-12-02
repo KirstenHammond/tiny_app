@@ -60,7 +60,7 @@ app.get("/urls", (req, res) => {
     res.render("error", { error: "Please login or register to view/edit your TinyURLs" });
   } else {
     let filteredURLS = urlsForUser(user_id, urlDatabase);
-    let userObject = getUserObject(user_id, userDatabase);
+    const userObject = getUserObject(user_id, userDatabase);
     const templateVars = {
       filteredURLS,
       userObject,  // Allowing access to the cookie status in the header template.
@@ -97,7 +97,7 @@ app.get("/urls/:tinyURL", (req, res) => {
   } else if (!filteredURLS[tinyURLRequested]) {
     res.render("error", { error: "You dont have authorisation to view/edit this TinyURL." });
   } else {
-    let userObject = getUserObject(user_id, userDatabase);
+    const userObject = getUserObject(user_id, userDatabase);
     const templateVars = {
       tinyURLRequested,
       userObject,
@@ -113,7 +113,7 @@ app.get("/u/:tinyURL", (req, res) => {
   // Access/redirection always allowed whether signed in or not
   const tinyURLRequested = req.params.tinyURL;
   if (urlDatabase[tinyURLRequested]) { // If the tinyURL exists in our database.
-    let redirLongURL = urlDatabase[tinyURLRequested].longURL; // Accessing the longURL from the database for redirection below.
+    const redirLongURL = urlDatabase[tinyURLRequested].longURL; // Accessing the longURL from the database for redirection below.
     res.redirect(redirLongURL);
   } else {
     res.render("error", { error: "That TinyURL doesnt exist in the TinyApp database." });
@@ -207,11 +207,11 @@ app.post("/login", (req, res) => {
   if (loginPassword === "" || loginEmail === "") { // First checks whether am email or password is entered
     res.render("error", { error: "Cannot login with empty email and password fields." });
   }
-  let userObjectLogin = getUserByEmail(loginEmail, userDatabase); // Function that takes in an email provided and accesses the userDatabase to return an object with userID, email and encrypted password.
+  const userObjectLogin = getUserByEmail(loginEmail, userDatabase); // Function that takes in an email provided and accesses the userDatabase to return an object with userID, email and encrypted password.
   if (!userObjectLogin) { // If the user object does not exist in the database
     res.render("error", { error: "TinyApp does not recognise that email on the database. Please register and try again." });
   } else { // If the user does exist, then check the password
-    let doPasswordsMatchDatabase = bcrypt.compareSync(loginPassword, userObjectLogin.password); // compareSync returns Boolean value when comparing unencrypted and encrypted values.
+    const doPasswordsMatchDatabase = bcrypt.compareSync(loginPassword, userObjectLogin.password); // compareSync returns Boolean value when comparing unencrypted and encrypted values.
     if (doPasswordsMatchDatabase) {
       req.session.user_id = (userObjectLogin.id); // Setting the session cookie to equal the unique userID created upon registration.
       res.redirect('/urls');
@@ -228,7 +228,7 @@ app.post("/register", (req, res) => {
   const registerEmail = req.body.email;
   const registerPassword = req.body.password;
   const hashedRegisterPassword = bcrypt.hashSync(registerPassword, 10); // Encrypting the password provided.
-  let registerUserObject = getUserByEmail(registerEmail, userDatabase); // Checking to see if the user already exists in the database
+  const registerUserObject = getUserByEmail(registerEmail, userDatabase); // Checking to see if the user already exists in the database
   if (registerUserObject === null && (registerPassword !== "" || registerEmail !== "")) { // If the user isnt already in the database and on the condition that the fields arent empty.
     userDatabase[id] = { id, email: registerEmail, password: hashedRegisterPassword }; // Add the user to the database.
     req.session.user_id = id; // Setting the session cookie value equal to the random unique userID just created.
