@@ -1,4 +1,4 @@
-<!-- subpage for each shortened url displaying the extended url-->
+<!-- Subpage for each TinyURL displaying the extended url, the date created and a form to edit the longURL-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -18,30 +18,21 @@
         <h5 class="card-title">TinyURL for: <%= longURL %>
         </h5>
         <p class="card-text">
-          Short URL ID: <a href="/u/<%= shortURLRequested %>">
-            <%= shortURLRequested %>
+          TinyURL ID: <a href="/u/<%= tinyURLRequested %>">
+            <%= tinyURLRequested %>
           </a>
-          <p class="card-text">
-            Date Created: <%= dateCreated%>
-          </p>
-          <p class="card-text">
-            Number of clicks: tbc
-          </p>
-          <p class="card-text">
-            Number of Unique clicks: tbc
-          </p>
+        <p class="card-text">
+          Date Created: <%= dateCreated%>
+        </p>
         </p>
       </div>
       <div class="card-footer text-muted">
         <div>
           <h3>Edit</h3>
-          <form method="POST" action="/urls/<%=shortURLRequested%>">
+          <form method="POST" action="/urls/<%=tinyURLRequested%>/?_method=PUT">
             <label>New URL</label>
-            <input 
-              type="text" 
-              name="longURL" 
-              placeholder="Paste URL to be updated">
-            <button type="submit" class="btn btn-primary" >Submit</button>
+            <input type="text" name="longURL" placeholder="Paste URL to be updated">
+            <button type="submit" class="btn btn-primary">Submit</button>
           </form>
         </div>
       </div>
