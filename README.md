@@ -1,22 +1,41 @@
-Todo
-chai tests
-readme
-intro. version of bit.ly 
-contents page with links to files and brief descriptions
-express server
-views-
-  -partials header
-  -404
-  login
-  register
-  index
-  new
-  show
+# TinyApp Project
 
-tech stack
-express, bcrypt, cookiesession, ejs, javscript, html, bootstrap, 
-dev dep mocha chai testing, nodemon
+TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly).
 
-intended use eg learning exercise
+## Final Product
 
-weaknesses - internal database
+!["Users Homepage when logged in"](#)
+!["Creating a New TinyURL"](#)
+!["Editing an existing TinyURL"](#)
+!["Logging in"](#)
+
+## Dependencies
+
+- Node.js
+- Express
+- EJS
+- bcryptjs for password encryption
+- cookie-session for encryption
+- method-override using `app.delete` and `app.put`
+
+### Helpful extras
+- Mocha/Chai for unit testing
+- nodemon for automatic server restarts
+
+### Contents
+1. [Mocha/Chai Unit Testing](/test)
+2. [View pages for EJS rendering](/views)
+  
+3. [Databases for URLs and Users](/database.js)
+4. [Express Server aka where the magic happens](/express_server.js)
+5. [Helper functions](/helperFunctions.js)
+
+
+### Getting Started
+
+- Install all dependencies (using the `npm install` command).
+- Run the development web server using the `node express_server.js` command.
+
+#### Acknowledgements
+This project was completed in 4 days during the @lighthouselabs Web Development Bootcamp.
+
