@@ -1,6 +1,7 @@
 //Tiny App
 
-//Create a website and server that reduces long urls to Tinyurls. Users must be logged in, after which they will gain acess to their database of TinyURLs.
+//TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly).
+//Users must register and be logged in to view and edit their database of TinyURLs.
 
 //---------------------------------------------------------------------------------------------------------------------
 //SETUP
@@ -30,7 +31,7 @@ app.use((req, res, next) => { // Optional Middleware to track request.
 //------------------------------------------------------------------------------------------------------------
 //IMPORTING HELPER FUNCTIONS
 
-const { getUserByEmail, randomString, isLoggedIn, urlsForUser } = require('./helperFunctions');
+const { getUserByEmail, getUserObject, randomString, isLoggedIn, urlsForUser } = require('./helperFunctions');
 
 //---------------------------------------------------------------------------------------------------------------------
 //IMPORTING DATABASES
@@ -53,17 +54,13 @@ app.get("/", (req, res) => {
 //Main Page----------------------------------------------------------------------------------------------------
 app.get("/urls", (req, res) => {
   // Home page displaying user specific URL conversions when signed in.
-  const loginStatus = isLoggedIn(req.session.user_id); // Checking if a cookie is set in order to determine logged in status. Logic repeats for several routes.
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id); // Checking if a cookie is set in order to determine logged in status. Logic repeats for several routes.
   if (!loginStatus) { // If not logged in
     res.render("error", { error: "Please login or register to view/edit your TinyURLs" });
   } else {
-    let userObject = {};
-    for (let existingID in userDatabase) {
-      if (existingID === req.session.user_id) {
-        userObject = userDatabase[existingID];
-      }
-    }
-    let filteredURLS = urlsForUser(req.session.user_id, urlDatabase);
+    let filteredURLS = urlsForUser(user_id, urlDatabase);
+    let userObject = getUserObject(user_id, userDatabase);
     const templateVars = {
       filteredURLS,
       userObject,  // Allowing access to the cookie status in the header template.
@@ -76,20 +73,12 @@ app.get("/urls", (req, res) => {
 
 //New TinyURL submission-----------------------------------------------------------------------------------------
 app.get("/urls/new", (req, res) => {
-  const loginStatus = isLoggedIn(req.session.user_id); // Checking login status, as detailed in notes above.
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id); // Checking login status, as detailed in notes above.
   if (!loginStatus) {
     res.redirect("/login");
   } else {
-    let userObject = {};
-    for (let existingID in userDatabase) {
-      if (existingID === req.session.user_id) {
-        userObject = userDatabase[existingID];
-      }
-    }
-    const templateVars = {
-      userObject
-    };
-    res.render("urls_new", templateVars);
+    res.render("urls_new", {userObject : getUserObject(user_id, userDatabase)});
   }
 });
 
@@ -98,9 +87,9 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:tinyURL", (req, res) => {
   // TinyURL individual page detailing the longURL, date created and a form to edit/update longURL.
   const tinyURLRequested = req.params.tinyURL;
-  const userCookieName = req.session.user_id;
-  const loginStatus = isLoggedIn(userCookieName);
-  let filteredURLS = urlsForUser(userCookieName, urlDatabase); // Filtering the database to only display TinyURLs owned by the user.
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id);
+  let filteredURLS = urlsForUser(user_id, urlDatabase); // Filtering the database to only display TinyURLs owned by the user.
   if (!urlDatabase[tinyURLRequested]) {
     res.render("error", { error: "That TinyURL does not exist in the TinyApp database." });
   } else if (!loginStatus) {
@@ -108,12 +97,7 @@ app.get("/urls/:tinyURL", (req, res) => {
   } else if (!filteredURLS[tinyURLRequested]) {
     res.render("error", { error: "You dont have authorisation to view/edit this TinyURL." });
   } else {
-    let userObject = {};
-    for (let existingID in userDatabase) {
-      if (existingID === userCookieName) {
-        userObject = userDatabase[existingID];
-      }
-    }
+    let userObject = getUserObject(user_id, userDatabase);
     const templateVars = {
       tinyURLRequested,
       userObject,
@@ -143,13 +127,14 @@ app.get("/u/:tinyURL", (req, res) => {
 //POST New URL-----------------------------------------------------------------------------------------------------------------
 app.post("/urls", (req, res) => {
   // POST request for when user enters longURL in /urls/new.
-  const loginStatus = isLoggedIn(req.session.user_id);
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id);
   if (!loginStatus) {
     res.redirect("error", { error: "Please login or register to create new TinyURLs." }); // If logged out and accessing path via curl, then redirect. Safety issue.
   } else {
     const tinyURL = randomString(); // TinyURL generator for each submission.
     const longURL = `http://${req.body.longURL}`; // Making the format readable by the browser when redirecting.
-    urlDatabase[tinyURL] = { longURL, userID: req.session.user_id }; // Adding the new longURL and TinyURL to the database.
+    urlDatabase[tinyURL] = { longURL, userID: user_id }; // Adding the new longURL and TinyURL to the database.
     res.redirect(`/urls/${tinyURL}`); // Redirect to the edit/show page.
   }
 });
@@ -190,20 +175,12 @@ app.delete('/urls/:tinyURL', (req, res) => {
 
 //GET Login---------------------------------------------------------------------------------------------------------
 app.get("/login", (req, res) => {
-  const loginStatus = isLoggedIn(req.session.user_id);
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id);
   if (loginStatus) {
     res.redirect("/urls");
   } else {
-    let userObject = {};
-    for (let existingID in userDatabase) {
-      if (existingID === req.session.user_id) {
-        userObject = userDatabase[existingID];
-      }
-    }
-    const templateVars = {
-      userObject
-    };
-    res.render("login", templateVars);
+    res.render("login", {userObject : getUserObject(user_id, userDatabase)});
   }
 });
 
@@ -211,20 +188,12 @@ app.get("/login", (req, res) => {
 //Get Register-------------------------------------------------------------------------------------------------------------------------------
 app.get("/register", (req, res) => {
   // Rendering for /register page where users submit their email and password to create a new user.
-  const loginStatus = isLoggedIn(req.session.user_id);
+  const user_id = req.session.user_id;
+  const loginStatus = isLoggedIn(user_id);
   if (loginStatus) {
     res.redirect("/urls");
   } else {
-    let userObject = {};
-    for (let existingID in userDatabase) {
-      if (existingID === req.session.user_id) {
-        userObject = userDatabase[existingID];
-      }
-    }
-    const templateVars = {
-      userObject
-    };
-    res.render("register", templateVars);
+    res.render("register", {userObject : getUserObject(user_id, userDatabase)});
   }
 });
 
